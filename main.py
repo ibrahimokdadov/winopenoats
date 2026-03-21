@@ -1,11 +1,24 @@
 import sys
 import asyncio
+import logging
 import qasync
 from PySide6.QtWidgets import QApplication
 from app.coordinator import AppCoordinator
 from app.settings import AppSettings
 from ui.main_window import MainWindow
 from ui.styles import DARK_THEME
+
+logging.basicConfig(
+    level=logging.WARNING,
+    format="%(asctime)s %(name)s %(levelname)s %(message)s",
+    handlers=[
+        logging.StreamHandler(sys.stderr),
+        logging.FileHandler("openoats.log", encoding="utf-8"),
+    ],
+)
+# Keep our own modules at INFO
+for _mod in ("app", "audio", "transcription", "intelligence", "storage"):
+    logging.getLogger(_mod).setLevel(logging.INFO)
 
 
 def main():

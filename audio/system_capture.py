@@ -10,8 +10,8 @@ except (ImportError, OSError):
 
 
 class SystemCapture:
-    SAMPLE_RATE = 16000
-    CHUNK_FRAMES = 512
+    TARGET_RATE = 16000
+    CHUNK_FRAMES = 512  # at TARGET_RATE (32 ms)
 
     def __init__(self, loop: asyncio.AbstractEventLoop):
         self._loop = loop
@@ -20,17 +20,38 @@ class SystemCapture:
         self._stream = None
         self.rms: float = 0.0
         self.available: bool = True
+        self._native_rate: int = self.TARGET_RATE
+        self._native_channels: int = 1
 
     def _on_chunk(self, chunk: np.ndarray):
+        # Mix to mono
+        if chunk.ndim > 1:
+            chunk = chunk.mean(axis=1)
+        # Resample to TARGET_RATE if needed (anti-aliased)
+        if self._native_rate != self.TARGET_RATE:
+            try:
+                from scipy.signal import resample_poly
+                from math import gcd
+                g = gcd(self.TARGET_RATE, self._native_rate)
+                up, down = self.TARGET_RATE // g, self._native_rate // g
+                chunk = resample_poly(chunk, up, down).astype(np.float32)
+            except ImportError:
+                ratio = self.TARGET_RATE / self._native_rate
+                target_len = max(1, int(len(chunk) * ratio))
+                indices = np.linspace(0, len(chunk) - 1, target_len)
+                chunk = np.interp(indices, np.arange(len(chunk)), chunk).astype(np.float32)
         self.rms = float(np.sqrt(np.mean(chunk ** 2)))
-        try:
-            self._loop.call_soon_threadsafe(self._queue.put_nowait, chunk.copy())
-        except asyncio.QueueFull:
-            pass
+        c = chunk.copy()
+        def _put():
+            try:
+                self._queue.put_nowait(c)
+            except asyncio.QueueFull:
+                pass
+        self._loop.call_soon_threadsafe(_put)
 
     def _pa_callback(self, in_data, frame_count, time_info, status):
         import pyaudiowpatch as pyaudio
-        chunk = np.frombuffer(in_data, dtype=np.float32)
+        chunk = np.frombuffer(in_data, dtype=np.float32).reshape(-1, self._native_channels)
         self._on_chunk(chunk)
         return (None, pyaudio.paContinue)
 
@@ -42,17 +63,23 @@ class SystemCapture:
             import pyaudiowpatch as pyaudio
             self._pa = pyaudio.PyAudio()
             loopback = self._pa.get_default_wasapi_loopback()
+            self._native_rate = int(loopback["defaultSampleRate"])
+            self._native_channels = int(loopback["maxInputChannels"])
+            # Capture at native rate with proportional chunk size
+            native_chunk = int(self.CHUNK_FRAMES * self._native_rate / self.TARGET_RATE)
             self._stream = self._pa.open(
                 format=pyaudio.paFloat32,
-                channels=1,
-                rate=self.SAMPLE_RATE,
+                channels=self._native_channels,
+                rate=self._native_rate,
                 input=True,
                 input_device_index=loopback["index"],
-                frames_per_buffer=self.CHUNK_FRAMES,
+                frames_per_buffer=native_chunk,
                 stream_callback=self._pa_callback,
             )
             self._stream.start_stream()
-        except (OSError, Exception):
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).error("SystemCapture.start failed: %s", e, exc_info=True)
             self.available = False
 
     def stop(self):

@@ -3,15 +3,28 @@ from PySide6.QtCore import QTimer, Qt
 
 
 class Toast(QLabel):
-    COLORS = {
-        "info": "#2d2d2d",
-        "warning": "#7a5c00",
-        "error": "#6b1a1a",
+    _STYLES = {
+        "info": (
+            "background-color: #111827; border: 1px solid #252d45; "
+            "border-left: 3px solid #6366f1; color: #a5b4fc;"
+        ),
+        "success": (
+            "background-color: #052e16; border: 1px solid #14532d; "
+            "border-left: 3px solid #22c55e; color: #86efac;"
+        ),
+        "warning": (
+            "background-color: #1c1505; border: 1px solid #292005; "
+            "border-left: 3px solid #f59e0b; color: #fcd34d;"
+        ),
+        "error": (
+            "background-color: #1c0606; border: 1px solid #350a0a; "
+            "border-left: 3px solid #ef4444; color: #fca5a5;"
+        ),
     }
 
     def __init__(self, parent: QWidget):
         super().__init__(parent)
-        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
         self.setWordWrap(True)
         self.hide()
         self._timer = QTimer(self)
@@ -20,18 +33,18 @@ class Toast(QLabel):
 
     def show_message(self, message: str, level: str = "info", duration_ms: int = 4000):
         self._timer.stop()
-        color = self.COLORS.get(level, self.COLORS["info"])
+        style = self._STYLES.get(level, self._STYLES["info"])
         self.setStyleSheet(
-            f"background-color: {color}; border: 1px solid #555; "
-            f"border-radius: 6px; padding: 8px 14px; color: #e0e0e0;"
+            f"{style} border-radius: 6px; padding: 10px 16px; font-size: 13px;"
         )
         self.setText(message)
         self.adjustSize()
         if self.parent():
             parent_rect = self.parent().rect()
-            self.setFixedWidth(min(400, parent_rect.width() - 40))
+            self.setFixedWidth(min(420, parent_rect.width() - 48))
+            self.adjustSize()
             x = (parent_rect.width() - self.width()) // 2
-            y = max(10, parent_rect.height() - self.height() - 20)
+            y = parent_rect.height() - self.height() - 24
             self.move(x, y)
         self.show()
         self.raise_()

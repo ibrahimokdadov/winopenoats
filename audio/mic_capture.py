@@ -24,10 +24,12 @@ class MicCapture:
     def _callback(self, indata: np.ndarray, frames: int, time, status):
         chunk = indata[:, 0].copy() if indata.ndim > 1 else indata.copy()
         self.rms = float(np.sqrt(np.mean(chunk ** 2)))
-        try:
-            self._loop.call_soon_threadsafe(self._queue.put_nowait, chunk)
-        except asyncio.QueueFull:
-            pass
+        def _put():
+            try:
+                self._queue.put_nowait(chunk)
+            except asyncio.QueueFull:
+                pass
+        self._loop.call_soon_threadsafe(_put)
 
     def start(self):
         if not _SD_AVAILABLE:
@@ -43,7 +45,9 @@ class MicCapture:
                 callback=self._callback,
             )
             self._stream.start()
-        except Exception:
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).error("MicCapture.start failed: %s", e, exc_info=True)
             self.available = False
 
     def stop(self):

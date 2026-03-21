@@ -87,6 +87,18 @@ class AppCoordinator(QObject):
     async def start_session(self) -> None:
         self.transcript_store.clear()
 
+        self._session_store = SessionStore(
+            session_dir=self.settings.session_dir,
+            notes_dir=self.settings.notes_dir,
+        )
+
+        self.toast_requested.emit("Loading transcription model…", "info")
+        self._engine = await asyncio.to_thread(
+            TranscriptionEngine,
+            model_dir=self.settings.model_dir,
+            model_size=self.settings.transcription_model,
+        )
+
         self._mic.start()
         if not self._mic.available:
             self.toast_requested.emit(
@@ -97,16 +109,6 @@ class AppCoordinator(QObject):
         self._sys.start()
         if not self._sys.available:
             self.system_audio_unavailable.emit()
-
-        self._session_store = SessionStore(
-            session_dir=self.settings.session_dir,
-            notes_dir=self.settings.notes_dir,
-        )
-
-        self._engine = TranscriptionEngine(
-            model_dir=self.settings.model_dir,
-            model_size=self.settings.transcription_model,
-        )
         self._engine.on_utterance = self._on_utterance
         self._engine.on_partial = self.transcript_store.update_partial
 

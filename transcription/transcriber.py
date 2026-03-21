@@ -5,10 +5,10 @@ from typing import AsyncIterator, Callable, Literal
 from models.models import Utterance
 from transcription.vad import SileroVAD, FRAME_SAMPLES, THRESHOLD
 
-FLUSH_SAMPLES = 16000 * 3       # 3 seconds of speech
-SILENCE_SAMPLES = 16000 // 2    # 500ms silence triggers flush
+FLUSH_SAMPLES = 16000 * 6       # 6 seconds of speech max
+SILENCE_SAMPLES = 16000         # 1s silence triggers flush (longer = more context)
 MIN_SAMPLES = 8000               # minimum before eligible to flush
-PREROLL_SAMPLES = 16000 // 3    # ~320ms preroll
+PREROLL_SAMPLES = 16000 // 2    # 500ms preroll for word boundary context
 
 
 class StreamingTranscriber:
@@ -67,7 +67,11 @@ class StreamingTranscriber:
         self._in_speech = False
         self._vad.reset()
 
-        segments, _ = self._model.transcribe(buf, language="en", beam_size=5)
+        segments, _ = self._model.transcribe(
+            buf,
+            language="en",
+            beam_size=5,
+        )
         text = " ".join(s.text for s in segments).strip()
         if text:
             utterance = Utterance(
