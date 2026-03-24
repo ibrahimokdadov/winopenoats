@@ -67,6 +67,8 @@ class StreamingTranscriber:
         self._in_speech = False
         self._vad.reset()
 
+        self.on_partial("...")
+
         segments, _ = self._model.transcribe(
             buf,
             language="en",

@@ -5,3 +5,23 @@ __pycache__/
 dist/
 build/
 *.spec.bak
+
+# Logs
+*.log
+
+# Local environment / secrets
+.env
+.env.*
+*.key
+secrets.json
+config.local.*
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp

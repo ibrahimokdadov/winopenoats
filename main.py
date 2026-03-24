@@ -41,6 +41,9 @@ def main():
     window = MainWindow(coordinator)
     window.show()
 
+    from ui.system_tray import SystemTray
+    window._tray = SystemTray(main_window=window, coordinator=coordinator)
+
     async def _startup():
         if coordinator.kb:
             window._kb_label.setText("Indexing KB...")
@@ -49,7 +52,7 @@ def main():
                     f"Indexing KB: {done}/{total}"
                 )
             )
-            window._kb_label.setText(f"KB: {len(coordinator.kb._chunks)} chunks")
+            window._kb_label.setText(f"KB: {coordinator.kb.chunk_count} chunks")
 
     loop.call_soon(lambda: asyncio.ensure_future(_startup()))
 

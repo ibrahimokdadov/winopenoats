@@ -23,9 +23,14 @@ class OllamaClient(BaseLLMClient, BaseEmbeddingClient):
         results = []
         async with httpx.AsyncClient(timeout=30) as client:
             for text in texts:
-                resp = await client.post(
-                    f"{self._base}/api/embeddings",
-                    json={"model": self._emb, "prompt": text},
-                )
+                try:
+                    resp = await client.post(
+                        f"{self._base}/api/embeddings",
+                        json={"model": self._emb, "prompt": text},
+                    )
+                except httpx.ConnectError:
+                    raise LLMUnavailableError(f"Ollama not running at {self._base}")
+                if not (200 <= resp.status_code < 300):
+                    raise LLMUnavailableError(f"Ollama HTTP {resp.status_code}")
                 results.append(resp.json()["embedding"])
         return results

@@ -46,6 +46,10 @@ class KnowledgeBase:
         self._chunks: list[dict] = []
         self._embeddings: np.ndarray | None = None
 
+    @property
+    def chunk_count(self) -> int:
+        return len(self._chunks)
+
     async def index(self, progress_cb=None) -> None:
         """Index the knowledge base folder. Blocking I/O is offloaded to a thread."""
         self._cache_dir.mkdir(exist_ok=True)

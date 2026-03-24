@@ -17,13 +17,13 @@ class SuggestionCard(QFrame):
 
         headline = QLabel(suggestion.headline)
         headline.setWordWrap(True)
-        headline.setStyleSheet("font-weight: 600; font-size: 13px; color: #dde1f0;")
+        headline.setStyleSheet("font-weight: 600; font-size: 13px; color: #1c1a17;")
         layout.addWidget(headline)
 
         if suggestion.coaching:
             coaching = QLabel(suggestion.coaching)
             coaching.setWordWrap(True)
-            coaching.setStyleSheet("color: #6370a0; font-size: 12px; line-height: 1.4;")
+            coaching.setStyleSheet("color: #8b7e72; font-size: 12px;")
             layout.addWidget(coaching)
 
         bottom = QHBoxLayout()
@@ -31,7 +31,7 @@ class SuggestionCard(QFrame):
 
         if suggestion.evidence:
             src = QLabel(f"📄 {suggestion.evidence[0].source_file}")
-            src.setStyleSheet("color: #2e3655; font-size: 11px;")
+            src.setStyleSheet("color: #c5bdb3; font-size: 11px; font-style: italic;")
             bottom.addWidget(src)
         bottom.addStretch()
 
@@ -39,9 +39,9 @@ class SuggestionCard(QFrame):
             btn = QPushButton(emoji)
             btn.setFixedSize(24, 24)
             btn.setStyleSheet(
-                "QPushButton { background-color: transparent; border: 1px solid #1e2a40; "
-                "border-radius: 4px; color: #3d4468; font-size: 12px; padding: 0; }"
-                "QPushButton:hover { background-color: #1e2640; color: #7880a0; }"
+                "QPushButton { background-color: transparent; border: 1px solid #e2ddd6; "
+                "border-radius: 4px; color: #c5bdb3; font-size: 12px; padding: 0; }"
+                "QPushButton:hover { background-color: #edeae5; color: #6b6059; }"
             )
             btn.clicked.connect(
                 lambda _, sid=str(suggestion.id), p=polarity:
@@ -65,7 +65,7 @@ class SuggestionsView(QWidget):
 
         # Placeholder shown when no suggestions yet
         self._empty = QLabel("Suggestions from your knowledge base will appear here")
-        self._empty.setStyleSheet("color: #1e2640; font-size: 12px; padding: 8px 0;")
+        self._empty.setStyleSheet("color: #c5bdb3; font-size: 12px; padding: 12px 0;")
         self._empty.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self._empty)
 

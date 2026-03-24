@@ -2,6 +2,7 @@ from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
     QComboBox, QPushButton, QFileDialog, QTabWidget, QWidget, QCheckBox
 )
+import sounddevice as sd
 from app.settings import AppSettings
 
 
@@ -44,11 +45,51 @@ class SettingsDialog(QDialog):
         # Transcription tab
         trans_tab = QWidget()
         trans_layout = QVBoxLayout(trans_tab)
-        trans_layout.addWidget(QLabel("Whisper Model"))
+        trans_layout.addWidget(QLabel("Transcription Model"))
         self._trans_model = QComboBox()
-        self._trans_model.addItems(["tiny.en", "small.en", "medium.en", "large-v3"])
-        self._trans_model.setCurrentText(self.settings.transcription_model)
+        self._MODELS = [
+            ("Parakeet TDT v2  (English, ~600 MB)",      "parakeet-tdt-0.6b-v2"),
+            ("Parakeet TDT 1.1B  (Multilingual, ~1.1 GB)", "parakeet-tdt-1.1b"),
+            ("Whisper Base  (~142 MB)",                   "base.en"),
+            ("Whisper Small  (~244 MB)",                  "small.en"),
+            ("Whisper Large v3 Turbo  (~800 MB)",          "large-v3-turbo"),
+            ("Whisper Large v3  (~1.5 GB)",                "large-v3"),
+        ]
+        for label, _ in self._MODELS:
+            self._trans_model.addItem(label)
+        # select current
+        current_ids = [m for _, m in self._MODELS]
+        idx = current_ids.index(self.settings.transcription_model) \
+            if self.settings.transcription_model in current_ids else 1
+        self._trans_model.setCurrentIndex(idx)
         trans_layout.addWidget(self._trans_model)
+        note = QLabel(
+            "Model is downloaded on first use and cached locally.\n"
+            "Parakeet models require: pip install nemo_toolkit[asr]"
+        )
+        note.setStyleSheet("color: #b0b8d8; font-size: 11px;")
+        note.setWordWrap(True)
+        trans_layout.addWidget(note)
+
+        trans_layout.addWidget(QLabel("Microphone"))
+        self._input_device = QComboBox()
+        self._input_device_indices: list[int | None] = [None]
+        self._input_device.addItem("System Default")
+        try:
+            devices = sd.query_devices()
+            for i, dev in enumerate(devices):
+                if dev["max_input_channels"] > 0:
+                    self._input_device.addItem(dev["name"])
+                    self._input_device_indices.append(i)
+        except Exception:
+            pass
+        current_device = self.settings.input_device
+        if current_device is not None and current_device in self._input_device_indices:
+            self._input_device.setCurrentIndex(self._input_device_indices.index(current_device))
+        else:
+            self._input_device.setCurrentIndex(0)
+        trans_layout.addWidget(self._input_device)
+
         trans_layout.addStretch()
         tabs.addTab(trans_tab, "Transcription")
 
@@ -98,7 +139,8 @@ class SettingsDialog(QDialog):
         self.settings.llm_provider = self._llm_provider.currentText()
         self.settings.llm_model = self._llm_model.text()
         self.settings.ollama_base_url = self._ollama_url.text()
-        self.settings.transcription_model = self._trans_model.currentText()
+        self.settings.transcription_model = self._MODELS[self._trans_model.currentIndex()][1]
+        self.settings.input_device = self._input_device_indices[self._input_device.currentIndex()]
         self.settings.kb_folder = self._kb_folder.text() or None
         self.settings.hide_from_screen_capture = self._hide_screen.isChecked()
         self.settings.save()

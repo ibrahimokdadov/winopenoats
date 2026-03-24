@@ -7,21 +7,30 @@ from transcription.vad import SileroVAD
 from typing import Callable
 from models.models import Utterance
 
+_PARAKEET_IDS = {"parakeet-tdt-0.6b-v2", "parakeet-tdt-1.1b"}
+
+
+def _load_model(model_dir: Path, model_id: str):
+    if model_id in _PARAKEET_IDS:
+        from transcription.parakeet_backend import ParakeetModel
+        return ParakeetModel(model_id)
+    # faster-whisper
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    compute_type = "float16" if device == "cuda" else "int8"
+    cache_path = model_dir / f"models--Systran--faster-whisper-{model_id}" / "refs" / "main"
+    local_only = cache_path.exists()
+    return WhisperModel(
+        model_id,
+        device=device,
+        compute_type=compute_type,
+        download_root=str(model_dir),
+        local_files_only=local_only,
+    )
+
 
 class TranscriptionEngine:
-    def __init__(self, model_dir: Path, model_size: str = "small.en"):
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-        compute_type = "float16" if device == "cuda" else "int8"
-        # Use cached model offline if available; download only on first run
-        cache_path = model_dir / f"models--Systran--faster-whisper-{model_size}" / "refs" / "main"
-        local_only = cache_path.exists()
-        self._model = WhisperModel(
-            model_size,
-            device=device,
-            compute_type=compute_type,
-            download_root=str(model_dir),
-            local_files_only=local_only,
-        )
+    def __init__(self, model_dir: Path, model_size: str = "large-v3-turbo"):
+        self._model = _load_model(model_dir, model_size)
         vad_mic = SileroVAD()
         vad_them = SileroVAD()
         self._mic_transcriber = StreamingTranscriber("you", self._model, vad_mic)

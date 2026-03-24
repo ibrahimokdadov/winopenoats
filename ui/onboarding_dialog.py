@@ -59,17 +59,22 @@ class OnboardingDialog(QDialog):
         kb_row.addWidget(browse)
         layout.addLayout(kb_row)
 
-        # Whisper model
+        # Transcription model
         model_label = QLabel("🗣 Transcription Model")
         model_label.setStyleSheet("font-weight: bold; font-size: 14px;")
         layout.addWidget(model_label)
+        self._MODELS = [
+            ("Parakeet TDT v2  (English, ~600 MB)",        "parakeet-tdt-0.6b-v2"),
+            ("Parakeet TDT 1.1B  (Multilingual, ~1.1 GB)", "parakeet-tdt-1.1b"),
+            ("Whisper Base  (~142 MB)",                    "base.en"),
+            ("Whisper Small  (~244 MB)",                   "small.en"),
+            ("Whisper Large v3 Turbo  (~800 MB)",           "large-v3-turbo"),
+            ("Whisper Large v3  (~1.5 GB)",                 "large-v3"),
+        ]
         self._model = QComboBox()
-        self._model.addItems([
-            "tiny.en (fast, ~75MB)",
-            "small.en (balanced, ~244MB)",
-            "medium.en (accurate, ~769MB)",
-        ])
-        self._model.setCurrentIndex(1)
+        for label, _ in self._MODELS:
+            self._model.addItem(label)
+        self._model.setCurrentIndex(3)
         layout.addWidget(self._model)
 
         layout.addStretch()
@@ -91,8 +96,7 @@ class OnboardingDialog(QDialog):
         kb = self._kb_folder.text().strip()
         if kb:
             self.settings.kb_folder = kb
-        model_map = {0: "tiny.en", 1: "small.en", 2: "medium.en"}
-        self.settings.transcription_model = model_map[self._model.currentIndex()]
+        self.settings.transcription_model = self._MODELS[self._model.currentIndex()][1]
         key = self._api_key.text().strip()
         if key:
             self.settings.set_secret("openrouter_api_key", key)

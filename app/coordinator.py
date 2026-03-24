@@ -20,6 +20,8 @@ class AppCoordinator(QObject):
     session_ended = Signal(object)           # SessionIndex
     system_audio_unavailable = Signal()
     toast_requested = Signal(str, str)       # (message, level)
+    suggestion_ready = Signal(object)        # Suggestion
+    notes_chunk_ready = Signal(str)          # notes text chunk
 
     def __init__(self, settings: AppSettings = None, parent=None):
         super().__init__(parent)
@@ -145,6 +147,20 @@ class AppCoordinator(QObject):
             index = self._session_store.finalize(title=topic, template_id=None)
             self.session_ended.emit(index)
 
+        if self.notes_engine:
+            asyncio.ensure_future(self._generate_notes())
+
+    async def _generate_notes(self) -> None:
+        utterances = list(self.transcript_store.utterances)
+        if not utterances:
+            return
+        try:
+            chunk = await self.notes_engine.generate(utterances)
+            if chunk:
+                self.notes_chunk_ready.emit(chunk)
+        except Exception as exc:
+            logger.warning("Notes generation failed: %s", exc)
+
     def _on_utterance(self, utterance: Utterance) -> None:
         self.transcript_store.append(utterance)
         if self._session_store:
@@ -155,3 +171,8 @@ class AppCoordinator(QObject):
     def _on_suggestion(self, suggestion: Suggestion) -> None:
         if self._session_store:
             self._session_store.write_suggestion(suggestion)
+        self.suggestion_ready.emit(suggestion)
+
+    def record_feedback(self, suggestion_id: str, polarity: str) -> None:
+        if self._session_store:
+            self._session_store.write_feedback(suggestion_id, polarity)

@@ -35,12 +35,17 @@ class NotesEngine:
             {"role": "system", "content": self._system_prompt},
             {"role": "user", "content": transcript},
         ]
-        try:
-            result = await self._llm(messages)
-            self.on_chunk(result)
-            return result
-        finally:
-            self.is_generating = False
+
+        async def _run():
+            try:
+                result = await self._llm(messages)
+                self.on_chunk(result)
+                return result
+            finally:
+                self.is_generating = False
+
+        self._task = asyncio.ensure_future(_run())
+        return await self._task
 
     def cancel(self):
         if self._task:
