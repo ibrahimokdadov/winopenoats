@@ -4,6 +4,8 @@ A Windows port of [OpenOats](https://github.com/yazinsai/OpenOats) — a real-ti
 
 > Original macOS app by [@yazinsai](https://github.com/yazinsai). This repo reimplements it for Windows using Python + PySide6.
 
+![WinOpenOats demo](demo.gif)
+
 ---
 
 ## Features
