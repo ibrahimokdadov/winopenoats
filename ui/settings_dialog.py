@@ -4,6 +4,7 @@ from PySide6.QtWidgets import (
 )
 import sounddevice as sd
 from app.settings import AppSettings
+from intelligence.templates import TEMPLATE_NAMES
 
 
 class SettingsDialog(QDialog):
@@ -23,7 +24,7 @@ class SettingsDialog(QDialog):
         llm_layout = QVBoxLayout(llm_tab)
         llm_layout.addWidget(QLabel("LLM Provider"))
         self._llm_provider = QComboBox()
-        self._llm_provider.addItems(["openrouter", "ollama"])
+        self._llm_provider.addItems(["openrouter", "ollama", "custom"])
         self._llm_provider.setCurrentText(self.settings.llm_provider)
         llm_layout.addWidget(self._llm_provider)
         llm_layout.addWidget(QLabel("Model"))
@@ -39,6 +40,21 @@ class SettingsDialog(QDialog):
         llm_layout.addWidget(QLabel("Ollama Base URL"))
         self._ollama_url = QLineEdit(self.settings.ollama_base_url)
         llm_layout.addWidget(self._ollama_url)
+        llm_layout.addWidget(QLabel("Custom Endpoint URL  (LM Studio, llama.cpp, LiteLLM…)"))
+        self._custom_url = QLineEdit(self.settings.custom_base_url)
+        self._custom_url.setPlaceholderText("http://localhost:1234/v1")
+        llm_layout.addWidget(self._custom_url)
+        llm_layout.addWidget(QLabel("Custom Model Name"))
+        self._custom_model = QLineEdit(self.settings.custom_llm_model)
+        self._custom_model.setPlaceholderText("local-model")
+        llm_layout.addWidget(self._custom_model)
+        llm_layout.addWidget(QLabel("Notes Template"))
+        self._notes_template = QComboBox()
+        self._notes_template.addItems(TEMPLATE_NAMES)
+        current_tpl = self.settings.notes_template
+        if current_tpl in TEMPLATE_NAMES:
+            self._notes_template.setCurrentText(current_tpl)
+        llm_layout.addWidget(self._notes_template)
         llm_layout.addStretch()
         tabs.addTab(llm_tab, "LLM")
 
@@ -67,7 +83,7 @@ class SettingsDialog(QDialog):
             "Model is downloaded on first use and cached locally.\n"
             "Parakeet models require: pip install nemo_toolkit[asr]"
         )
-        note.setStyleSheet("color: #b0b8d8; font-size: 11px;")
+        note.setStyleSheet("color: #8b7e72; font-size: 11px;")
         note.setWordWrap(True)
         trans_layout.addWidget(note)
 
@@ -139,6 +155,9 @@ class SettingsDialog(QDialog):
         self.settings.llm_provider = self._llm_provider.currentText()
         self.settings.llm_model = self._llm_model.text()
         self.settings.ollama_base_url = self._ollama_url.text()
+        self.settings.notes_template = self._notes_template.currentText()
+        self.settings.custom_base_url = self._custom_url.text().strip() or "http://localhost:1234/v1"
+        self.settings.custom_llm_model = self._custom_model.text().strip() or "local-model"
         self.settings.transcription_model = self._MODELS[self._trans_model.currentIndex()][1]
         self.settings.input_device = self._input_device_indices[self._input_device.currentIndex()]
         self.settings.kb_folder = self._kb_folder.text() or None

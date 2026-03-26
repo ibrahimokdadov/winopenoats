@@ -150,6 +150,13 @@ class MainWindow(QMainWindow):
         self._record_btn.clicked.connect(self._toggle_recording)
         controls.addWidget(self._record_btn)
 
+        self._mute_btn = QPushButton("Mute")
+        self._mute_btn.setObjectName("mute_btn")
+        self._mute_btn.setCheckable(True)
+        self._mute_btn.setToolTip("Mute microphone")
+        self._mute_btn.clicked.connect(self._toggle_mute)
+        controls.addWidget(self._mute_btn)
+
         self._notes_btn = QPushButton("Notes")
         self._notes_btn.setObjectName("notes_btn")
         self._notes_btn.setToolTip("Open meeting notes")
@@ -270,6 +277,10 @@ class MainWindow(QMainWindow):
                 item = row_layout.itemAt(i)
                 if item and item.widget():
                     item.widget().setVisible(visible)
+
+    def _toggle_mute(self, checked: bool):
+        self._coordinator._mic.muted = checked
+        self._mute_btn.setText("Unmute" if checked else "Mute")
 
     def _open_notes(self):
         self._notes_window.show_and_raise()

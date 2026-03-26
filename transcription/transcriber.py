@@ -5,7 +5,7 @@ from typing import AsyncIterator, Callable, Literal
 from models.models import Utterance
 from transcription.vad import SileroVAD, FRAME_SAMPLES, THRESHOLD
 
-FLUSH_SAMPLES = 16000 * 6       # 6 seconds of speech max
+FLUSH_SAMPLES = 16000 * 10      # 10 seconds of speech max (longer = lower WER)
 SILENCE_SAMPLES = 16000         # 1s silence triggers flush (longer = more context)
 MIN_SAMPLES = 8000               # minimum before eligible to flush
 PREROLL_SAMPLES = 16000 // 2    # 500ms preroll for word boundary context

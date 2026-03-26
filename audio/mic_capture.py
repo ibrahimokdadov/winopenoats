@@ -20,10 +20,15 @@ class MicCapture:
         self._stream = None
         self.rms: float = 0.0
         self.available: bool = True
+        self.muted: bool = False
 
     def _callback(self, indata: np.ndarray, frames: int, time, status):
         chunk = indata[:, 0].copy() if indata.ndim > 1 else indata.copy()
-        self.rms = float(np.sqrt(np.mean(chunk ** 2)))
+        if self.muted:
+            self.rms = 0.0
+            chunk = np.zeros_like(chunk)
+        else:
+            self.rms = float(np.sqrt(np.mean(chunk ** 2)))
         def _put():
             try:
                 self._queue.put_nowait(chunk)

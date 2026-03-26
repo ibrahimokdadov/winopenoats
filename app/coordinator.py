@@ -84,6 +84,14 @@ class AppCoordinator(QObject):
                 self.settings.ollama_embedding_model,
             )
             return client.complete
+        elif provider == "custom":
+            from intelligence.clients.openrouter import OpenRouterClient
+            client = OpenRouterClient(
+                api_key="",
+                base_url=self.settings.custom_base_url,
+                model=self.settings.custom_llm_model,
+            )
+            return client.complete
         return None
 
     async def start_session(self) -> None:
@@ -121,9 +129,10 @@ class AppCoordinator(QObject):
                 llm_complete=llm_fn,
                 on_suggestion=self._on_suggestion,
             )
+        from intelligence.templates import get_prompt
         self.notes_engine = NotesEngine(
             llm_complete=llm_fn,
-            system_prompt="Summarize this meeting as structured notes.",
+            system_prompt=get_prompt(self.settings.notes_template),
         )
 
         self._engine_task = asyncio.create_task(

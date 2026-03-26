@@ -40,6 +40,28 @@ QPushButton#settings_btn:hover {
 }
 QPushButton#settings_btn:pressed { background-color: #e2ddd6; }
 
+/* Mute — secondary ghost button, amber when active */
+QPushButton#mute_btn {
+    background-color: transparent;
+    border: 1px solid #e2ddd6;
+    border-radius: 6px;
+    padding: 7px 14px;
+    color: #8b7e72;
+    font-size: 12px;
+    font-weight: 400;
+}
+QPushButton#mute_btn:hover {
+    background-color: #f2f0ec;
+    border-color: #cec8c0;
+    color: #1c1a17;
+}
+QPushButton#mute_btn:checked {
+    background-color: #fefce8;
+    border: 1px solid #fde68a;
+    color: #78350f;
+}
+QPushButton#mute_btn:checked:hover { background-color: #fef9c3; }
+
 /* Notes — secondary ghost button */
 QPushButton#notes_btn {
     background-color: transparent;

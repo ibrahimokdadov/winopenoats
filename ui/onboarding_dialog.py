@@ -22,7 +22,7 @@ class OnboardingDialog(QDialog):
         layout.addWidget(title)
 
         subtitle = QLabel("Let's get you set up. This takes about 2 minutes.")
-        subtitle.setStyleSheet("color: #aaa;")
+        subtitle.setStyleSheet("color: #8b7e72;")
         layout.addWidget(subtitle)
 
         # Consent
